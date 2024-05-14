@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bus Booking Management</title>
+</head>
+<body>
+    <h1>Bus Booking Management</h1>
+    <form id="bookingForm">
+        <label for="name">Name:</label>
+        <input type="text" id="name" name="name"><br><br>
+        <label for="email">Email:</label>
+        <input type="email" id="email" name="email"><br><br>
+        <label for="phone">Phone:</label>
+        <input type="tel" id="phone" name="phone"><br><br>
+        <label for="carNo">Bus Type:</label>
+        <select id="carNo" name="carNo">
+            <option value="bus1">Bus 1</option>
+            <option value="bus2">Bus 2</option>
+            <option value="bus3">Bus 3</option>
+        </select><br><br>
+        <button type="button" onclick="bookBus()">Book</button>
+    </form>
+    <h2>Bookings:</h2>
+    <ul id="bookingList"></ul>
+    <script>
+        const apiUrl = 'https://crudcrud.com/api/c0e543c529e04d3ab13e7289a45d761f';
+        function bookBus() {
+            var name = document.getElementById("name").value;
+            var email = document.getElementById("email").value;
+            var phone = document.getElementById("phone").value;
+            var carNo = document.getElementById("carNo").value;
+            var booking = {
+                name: name,
+                email: email,
+                phone: phone,
+                carNo: carNo
+            };
+            var bookingList = document.getElementById("bookingList");
+            var listItem = document.createElement("li");
+            listItem.textContent = "Name: " + booking.name + " | Email: " + booking.email + " | Phone: " + booking.phone + " | Bus Type: " + booking.carNo;
+            var editButton = document.createElement("button");
+            editButton.textContent = "Edit";
+            var deleteButton = document.createElement("button");
+            deleteButton.textContent = "Delete";
+            deleteButton.onclick = function() {
+                listItem.remove();
+                deleteBooking(booking._id);
+            };
+            listItem.appendChild(editButton);
+            listItem.appendChild(deleteButton);
+            bookingList.appendChild(listItem);
+            addBooking(booking);
+        }
+        function addBooking(booking) {
+            fetch('${apiUrl}/bookings', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(booking),
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log('Success:', data);
+            })
+            .catch((error) => {
+                console.error('Error:', error);
+            });
+        }
+        function deleteBooking(bookingId) {
+            fetch('${apiUrl}/bookings/${bookingId}', {
+                method: 'DELETE',
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log('Success:', data);
+            })
+            .catch((error) => {
+                console.error('Error:', error);
+            });
+        }
+    </script>
+</body>
+</html>
