@@ -3,84 +3,147 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bus Booking Management</title>
+    <title>Bus Booking</title>
 </head>
 <body>
-    <h1>Bus Booking Management</h1>
-    <form id="bookingForm">
-        <label for="name">Name:</label>
-        <input type="text" id="name" name="name"><br><br>
-        <label for="email">Email:</label>
-        <input type="email" id="email" name="email"><br><br>
-        <label for="phone">Phone:</label>
-        <input type="tel" id="phone" name="phone"><br><br>
-        <label for="carNo">Bus Type:</label>
-        <select id="carNo" name="carNo">
+    <h1>Bus Booking</h1>
+    <div class="form-group">
+        <label for="name">Name</label>
+        <input type="text" id="name">
+    </div>
+    <div class="form-group">
+        <label for="email">Email</label>
+        <input type="email" id="email">
+    </div>
+    <div class="form-group">
+        <label for="phone">Phone No</label>
+        <input type="tel" id="phone">
+    </div>
+    <div class="form-group">
+        <label for="carNo">Car No</label>
+        <select id="carNo">
             <option value="bus1">Bus 1</option>
             <option value="bus2">Bus 2</option>
             <option value="bus3">Bus 3</option>
-        </select><br><br>
-        <button type="button" onclick="bookBus()">Book</button>
-    </form>
-    <h2>Bookings:</h2>
-    <ul id="bookingList"></ul>
+        </select>
+    </div>
+    <button onclick="addBooking()">Book</button>
+
+    <h2>Bookings</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Email</th>
+                <th>Phone No</th>
+                <th>Car No</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody id="bookingList">
+            <!-- Bookings will appear here -->
+        </tbody>
+    </table>
+
     <script>
-        const apiUrl = 'https://crudcrud.com/api/c0e543c529e04d3ab13e7289a45d761f';
-        function bookBus() {
-            var name = document.getElementById("name").value;
-            var email = document.getElementById("email").value;
-            var phone = document.getElementById("phone").value;
-            var carNo = document.getElementById("carNo").value;
-            var booking = {
-                name: name,
-                email: email,
-                phone: phone,
-                carNo: carNo
-            };
-            var bookingList = document.getElementById("bookingList");
-            var listItem = document.createElement("li");
-            listItem.textContent = "Name: " + booking.name + " | Email: " + booking.email + " | Phone: " + booking.phone + " | Bus Type: " + booking.carNo;
-            var editButton = document.createElement("button");
-            editButton.textContent = "Edit";
-            var deleteButton = document.createElement("button");
-            deleteButton.textContent = "Delete";
-            deleteButton.onclick = function() {
-                listItem.remove();
-                deleteBooking(booking._id);
-            };
-            listItem.appendChild(editButton);
-            listItem.appendChild(deleteButton);
-            bookingList.appendChild(listItem);
-            addBooking(booking);
+        const API_URL = 'https://crudcrud.com/api/cd12fc0b6b994db6b758a3a8eb72ea4d/bookings'; // replace YOUR_UNIQUE_ENDPOINT with your actual CrudCrud endpoint
+        let bookings = [];
+        let editIndex = -1;
+
+        async function fetchBookings() {
+            try {
+                const response = await fetch(API_URL);
+                bookings = await response.json();
+                displayBookings();
+            } catch (error) {
+                console.error('Error fetching bookings:', error);
+            }
         }
-        function addBooking(booking) {
-            fetch('${apiUrl}/bookings', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(booking),
-            })
-            .then(response => response.json())
-            .then(data => {
-                console.log('Success:', data);
-            })
-            .catch((error) => {
-                console.error('Error:', error);
+
+        async function addBooking() {
+            const name = document.getElementById('name').value;
+            const email = document.getElementById('email').value;
+            const phone = document.getElementById('phone').value;
+            const carNo = document.getElementById('carNo').value;
+
+            const booking = { name, email, phone, carNo };
+
+            try {
+                if (editIndex === -1) {
+                    const response = await fetch(API_URL, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(booking)
+                    });
+                    const newBooking = await response.json();
+                    bookings.push(newBooking);
+                } else {
+                    const response = await fetch(`${API_URL}/${bookings[editIndex]._id}`, {
+                        method: 'PUT',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(booking)
+                    });
+                    bookings[editIndex] = await response.json();
+                    editIndex = -1;
+                }
+
+                document.getElementById('name').value = '';
+                document.getElementById('email').value = '';
+                document.getElementById('phone').value = '';
+                document.getElementById('carNo').value = 'bus1';
+
+                displayBookings();
+            } catch (error) {
+                console.error('Error adding booking:', error);
+            }
+        }
+
+        async function deleteBooking(index) {
+            try {
+                await fetch(`${API_URL}/${bookings[index]._id}`, {
+                    method: 'DELETE'
+                });
+                bookings.splice(index, 1);
+                displayBookings();
+            } catch (error) {
+                console.error('Error deleting booking:', error);
+            }
+        }
+
+        function editBooking(index) {
+            document.getElementById('name').value = bookings[index].name;
+            document.getElementById('email').value = bookings[index].email;
+            document.getElementById('phone').value = bookings[index].phone;
+            document.getElementById('carNo').value = bookings[index].carNo;
+            editIndex = index;
+        }
+
+        function displayBookings() {
+            const bookingList = document.getElementById('bookingList');
+            bookingList.innerHTML = '';
+            bookings.forEach((booking, index) => {
+                bookingList.innerHTML += `
+                    <tr>
+                        <td>${booking.name}</td>
+                        <td>${booking.email}</td>
+                        <td>${booking.phone}</td>
+                        <td>${booking.carNo}</td>
+                        <td>
+                            <div class="actions">
+                                <button onclick="editBooking(${index})">Edit</button>
+                                <button onclick="deleteBooking(${index})">Delete</button>
+                            </div>
+                        </td>
+                    </tr>
+                `;
             });
         }
-        function deleteBooking(bookingId) {
-            fetch('${apiUrl}/bookings/${bookingId}', {
-                method: 'DELETE',
-            })
-            .then(response => response.json())
-            .then(data => {
-                console.log('Success:', data);
-            })
-            .catch((error) => {
-                console.error('Error:', error);
-            });
-        }
+
+        document.addEventListener('DOMContentLoaded', fetchBookings);
     </script>
 </body>
 </html>
